@@ -1,6 +1,6 @@
 ---
 - name: update-apt-packages
-  hosts: raspberrypis  # Change to match your inventory group or hostname
+  hosts: plexipi  # Change to match your inventory group or hostname
   become: yes         # Use 'become' to run tasks with elevated privileges
   tasks:
 
