@@ -1,0 +1,74 @@
+---
+- name: Install Portainer on Raspberry Pi
+  hosts: newpi
+  become: true
+  vars:
+    # Adjust if you have a preferred Portainer tag or different architecture
+    portainer_image: "portainer/portainer-ce:latest"
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install prerequisites for Docker
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+        state: present
+
+    - name: Add Docker’s official GPG key
+      ansible.builtin.command: "curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -"
+      args:
+        warn: false
+      register: add_docker_gpg_key
+      changed_when: "'OK' in add_docker_gpg_key.stdout"
+
+    - name: Add Docker APT repository
+      apt_repository:
+        repo: "deb [arch=armhf] https://download.docker.com/linux/debian {{ ansible_lsb.codename }} stable"
+        state: present
+
+    - name: Update apt cache (after adding Docker repo)
+      apt:
+        update_cache: yes
+
+    - name: Install Docker
+      apt:
+        name: docker-ce
+        state: present
+
+    - name: Add current Ansible user to the docker group
+      user:
+        # ansible_user_id is the username Ansible is using to connect to the remote host
+        name: "{{ ansible_user_id }}"
+        append: yes
+        groups: docker
+
+    - name: Enable and start Docker
+      systemd:
+        name: docker
+        enabled: yes
+        state: started
+
+    - name: Install Python dependencies for managing Docker via Ansible
+      apt:
+        name: python3-docker
+        state: present
+
+    - name: Pull and run Portainer container
+      community.docker.docker_container:
+        name: portainer
+        image: "{{ portainer_image }}"
+        restart_policy: always
+        published_ports:
+          - "9000:9000"
+          - "8000:8000"
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock
+          - portainer_data:/data
+        state: started
