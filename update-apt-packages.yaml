@@ -1,6 +1,6 @@
 ---
 - name: update-apt-packages
-  hosts: PlexPi  # Change to match your inventory group or hostname
+  hosts: Pi  # Change to match your inventory group or hostname
   become: yes         # Use 'become' to run tasks with elevated privileges
   tasks:
 
